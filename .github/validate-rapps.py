@@ -92,10 +92,7 @@ class RappsLine:
         self._entries.append(line)
 
     def __getitem__(self, key):
-        for entry in self._entries:
-            if entry.key == key:
-                return entry
-        return None
+        return next((entry for entry in self._entries if entry.key == key), None)
 
     def parse(self, reporter):
         if not self._text.endswith(b'\r\n'):
@@ -130,7 +127,9 @@ class RappsLine:
             self.main_section = True
 
         if locale:
-            if len(locale) not in (2, 4) or not all(c in HEXDIGITS for c in locale):
+            if len(locale) not in (2, 4) or any(
+                c not in HEXDIGITS for c in locale
+            ):
                 reporter.add(self, self._text.index(locale) + 1, f'Invalid locale{extra_locale}: "{locale}"')
 
         if arch:
@@ -244,8 +243,7 @@ class RappsFile:
 
 
 def verify_unique(reporter, lines, line, name):
-    first = lines.get(name, None)
-    if first:
+    if first := lines.get(name, None):
         reporter.add(line, 0, f'Duplicate value found: {name}')
         reporter.add(first, 0, 'First occurence:')
     else:
